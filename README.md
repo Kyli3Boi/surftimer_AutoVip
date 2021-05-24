@@ -8,7 +8,9 @@ Manage VIP for Top players automatically
 
 <h1> Installation </h1>
 <li> Download files
+<li> Shutdown server
 <li> Move .smx file to <code>addons/sourcemod/plugins</code>
+<li> Before starting server please create a backup of your current VIPs so if something goes wrong you dont loose your data
 
 <h1> Usage </h1>
 <li> Plugin will create <code>surftimer_AutoVip.cfg</code> in <code>cfg/sourcemod</code> once loaded, which will contain the various customizable options
