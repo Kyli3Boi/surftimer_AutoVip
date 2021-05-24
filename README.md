@@ -1,5 +1,5 @@
 # surftimer_AutoVip
-Managed VIP for Top players automatically
+Manage VIP for Top players automatically
 
 
 <h1> About </h1>
