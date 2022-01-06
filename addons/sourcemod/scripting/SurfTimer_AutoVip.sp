@@ -120,31 +120,130 @@ public void OnClientPostAdminFilter(int client)
 {
 	if (!IsFakeClient(client))
 	{
-		CreateTempVip(client);
+		CheckIfPlayerAdmin(client);
 	}
 }
 
-public void CreateTempVip(int client)
+public void CheckIfPlayerAdmin(int client)
+{
+	if (g_bAutoVipDebug)
+	{
+		PrintToServer("[surftimer_AutoVip] Checking if player is an Admin");
+	}
+
+	int flags;
+	flags = GetUserFlagBits(client);
+
+	bool isAdmin;
+
+	if (flags == 0)	//Player not Admin
+	{
+		isAdmin = false;
+
+		if (g_bAutoVipDebug)
+		{
+			PrintToServer("[surftimer_AutoVip] Player is NOT an Admin");
+			PrintToServer("[surftimer_AutoVip] isAdmin is %b", isAdmin);
+		}
+	}
+	else	//Player is Admin
+	{
+		isAdmin = true;
+
+		if (g_bAutoVipDebug)
+		{
+			PrintToServer("[surftimer_AutoVip] Player IS an Admin");
+			PrintToServer("[surftimer_AutoVip] isAdmin is %b", isAdmin);
+		}
+	}
+
+	CreateTempVip(client, isAdmin, flags);
+}
+
+public void CreateTempVip(int client, bool isAdmin, int flags)
 {
 	if (g_bAutoVipDebug)
 	{
 		PrintToServer("[surftimer_AutoVip] Checking if player should be assigned VIP flag");
 	}
 	
-	if (!IsFakeClient(client))
+	char szSteamId[32];
+	int index;
+
+	GetClientAuthId(client, AuthId_Steam2, szSteamId, sizeof(szSteamId), true);
+	
+	index = FindStringInArray(g_szSteamID, szSteamId);
+
+	if (index != -1)
 	{
-		char szSteamId[32];
-		int index;
-
-		GetClientAuthId(client, AuthId_Steam2, szSteamId, sizeof(szSteamId), true);
-		
-		index = FindStringInArray(g_szSteamID, szSteamId);
-
-		if (index != -1)
+		if (isAdmin)
 		{
-			SetUserFlagBits(client, g_iAdminFlag);
+			if (g_bAutoVipDebug)
+			{
+				PrintToServer("[surftimer_AutoVip] Admin has current flags: %i", flags);
+				PrintToServer("[surftimer_AutoVip] Adding VIP flag to Admin");
+			}
+			
+			//Player already has flags so lets add g_iAdminFlag to current flags
+			SetUserFlagBits(client, ConcatenateInts(flags, g_iAdminFlag));
 		}
+		else
+		{
+			//Player has no previous flags so just give them g_iAdminFlag
+			SetUserFlagBits(client, g_iAdminFlag);
+
+			if (g_bAutoVipDebug)
+			{
+				PrintToServer("[surftimer_AutoVip] Adding VIP flag to non Admin");
+			}
+		}
+
+		if (g_bAutoVipDebug)
+		{
+			int newFlags;
+			newFlags = GetUserFlagBits(client);
+			
+			PrintToServer("[surftimer_AutoVip] Player now has: %i flags", newFlags);
+			PrintToServer("[surftimer_AutoVip] Refreshing admins");
+		}
+		
+		ServerCommand("sm_reloadadmins");
 	}
+}
+
+public int ConcatenateInts(int Num1, int Num2) //Function to add FlagBits together
+{
+	char string1[16], string2[16], stringFinal[32];
+	int intFinal, stringValue;
+
+	IntToString(Num1, string1, sizeof(string1));
+	IntToString(Num2, string2, sizeof(string2));
+
+	stringValue = StrContains(string1, string2);
+	if (g_bAutoVipDebug)
+	{
+		PrintToServer("[surftimer_AutoVip] StringValue = %i", stringValue);
+	}
+
+	//If old bitstring contains same bit as new bitstring, then dont concatenate the new bit onto the bitstring
+	if (stringValue == -1)
+	{
+		StrCat(stringFinal, sizeof(stringFinal), string1);
+		StrCat(stringFinal, sizeof(stringFinal), string2);
+	}
+	else
+	{
+		stringFinal = string1;
+	}
+	
+	intFinal = StringToInt(stringFinal);
+
+	if (g_bAutoVipDebug)
+	{
+		PrintToServer("[surftimer_AutoVip] ConcatenateInts: intFinal = %i", intFinal);
+	}
+
+	return intFinal;
 }
 
 public void db_Connect()
